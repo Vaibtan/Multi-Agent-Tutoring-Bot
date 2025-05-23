@@ -6,13 +6,13 @@ from typing import Any, Dict, Union
 
 class CalculatorTool:    
     operators: Dict[Any, Any] = {
-        ast.Add: operator.add,
-        ast.Sub: operator.sub,
-        ast.Mult: operator.mul,
-        ast.Div: operator.truediv,
-        ast.Pow: operator.pow,
-        ast.BitXor: operator.xor,
-        ast.USub: operator.neg,
+        ast.Add: lambda a, b: a + b,
+        ast.Sub: lambda a, b: a - b,
+        ast.Mult: lambda a, b: a * b,
+        ast.Div: lambda a, b: a / b,
+        ast.Pow: lambda a, b: a ** b,
+        ast.BitXor: lambda a, b: a ^ b,
+        ast.USub: lambda a: -a,
     }
     
     functions: Dict[str, Any] = {
@@ -32,32 +32,53 @@ class CalculatorTool:
         elif isinstance(node, ast.BinOp):
             left = CalculatorTool.evaluate_node(node.left)
             right = CalculatorTool.evaluate_node(node.right)
-            return CalculatorTool.operators[type(node.op)](left, right)
+            op_type = type(node.op)
+            if op_type in CalculatorTool.operators: return CalculatorTool.\
+                operators[op_type](left, right)
+            raise ValueError(f"Unsupported binary operator: {op_type.__name__}")
         elif isinstance(node, ast.UnaryOp):
             operand = CalculatorTool.evaluate_node(node.operand)
-            return CalculatorTool.operators[type(node.op)](operand)
+            op_type = type(node.op)
+            if op_type in CalculatorTool.operators: return CalculatorTool.\
+                operators[op_type](operand)
+            raise ValueError(f"Unsupported unary operator: {op_type.__name__}")
         elif isinstance(node, ast.Call):
-            func_name = node.func.id
-            if func_name in CalculatorTool.functions:
-                args = [CalculatorTool.evaluate_node(arg) for arg in node.args]
-                return CalculatorTool.functions[func_name](*args)
-            else: raise ValueError(f"Unsupported function: {func_name}")
-        else: raise ValueError(f"Unsupported operation: {type(node)}")
+            func_node = node.func
+            if isinstance(func_node, ast.Name): func_name = func_node.id
+            elif isinstance(func_node, ast.Attribute): func_name = func_node.attr
+            else: raise ValueError(f"Unsupported function node type: {type(func_node.__qualname__)}")
+            if func_name not in CalculatorTool.functions:
+                raise ValueError(f"Unsupported function: {func_name}")
+            args = [CalculatorTool.evaluate_node(arg) for arg in node.args]
+            return CalculatorTool.functions[func_name](*args)
+        elif isinstance(node, ast.Name) and node.id in ['pi', 'e']:
+             if node.id in CalculatorTool.functions: return CalculatorTool.functions[node.id]()
+        raise ValueError(f"Unsupported AST node type: {type(node).__name__}")
 
-    def get_supported_functions(self) -> list: return list(CalculatorTool.functions.keys())
+    @classmethod
+    def get_supported_functions(cls) -> list: return list(cls.functions.keys())
 
-    def calculate(self, expression: str) -> Dict[str, Any]:
+    @classmethod
+    def calculate(cls, expr: str) -> Dict[str, Any]:
         try:
-            tree = ast.parse(expression, mode = 'eval')        
-            result = CalculatorTool.evaluate_node(tree.body)
+            tree = ast.parse(expr, mode = 'eval') 
+            if not isinstance(tree, ast.Expression) or not tree.body:
+                raise SyntaxError("Invalid expression structure.")       
+            result = cls.evaluate_node(tree.body)
             return {
                 "status": "success",
                 "result": result,
-                "expression": expression
+                "expression": expr
             }
-        except (ValueError, SyntaxError, TypeError) as e:
+        except (ValueError, SyntaxError, TypeError, ZeroDivisionError) as e:
             return {
                 "status": "error",
                 "error": str(e),
-                "expression": expression
+                "expression": expr
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": f"An unexpected error occurred during calculation: {str(e)}",
+                "expression": expr
             }

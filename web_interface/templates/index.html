@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Multi-Agent Tutor</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1><i class="fas fa-graduation-cap"></i> AI Multi-Agent Tutor</h1>
+                <div class="agent-status" id="agentStatus">
+                    <span class="status-indicator active"></span>
+                    <span>System Online</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Chat Container -->
+        <main class="chat-container">
+            <!-- Messages Area -->
+            <div class="messages-area" id="messagesArea">
+                <!-- Welcome Message -->
+                <div class="message bot-message welcome-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">
+                            Welcome to the AI Multi-Agent Tutoring System! 🎓
+                            <br><br>
+                            I can help you with:
+                            <ul>
+                                <li><strong>Math:</strong> Algebra, calculus, geometry, problem solving</li>
+                                <li><strong>Physics:</strong> Mechanics, thermodynamics, constants lookup</li>
+                                <li><strong>Study Tips:</strong> General learning strategies and guidance</li>
+                            </ul>
+                            Ask me anything!
+                        </div>
+                        <div class="message-meta">
+                            <span class="agent-name">Tutor Orchestrator</span>
+                            <span class="timestamp">Just now</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="typing-animation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <form class="message-form" id="messageForm">
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            id="messageInput" 
+                            placeholder="Ask your question here..." 
+                            autocomplete="off"
+                            maxlength="500"
+                        >
+                        <button type="submit" id="sendButton">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <!-- Error Toast -->
+        <div class="error-toast" id="errorToast">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="errorMessage"></span>
+            <button onclick="hideError()"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>
