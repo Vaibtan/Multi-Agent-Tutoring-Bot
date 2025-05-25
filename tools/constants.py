@@ -1,8 +1,9 @@
+import difflib
 from typing import Any, Dict, List, Optional, Union
 
 
 class UniversalConstantsTool:    
-    def __init__(self):
+    def __init__(self) -> None:
         self.constants: Dict[str, Union[int, Any]] = {
             "speed_of_light": {
                 "value": 299792458,
@@ -61,56 +62,56 @@ class UniversalConstantsTool:
             "work": "W = F * d * cos(θ)",
             "power": "P = W / t",
             "wave_speed": "v = f * λ",
-            "ohms_law": "V = I * R"
+            "ohms_law": "V = I * R",
+            "ideal_gas_law": "P * V = n * R * T",
+            "work_energy_theorem": "W = ΔKE"
         }
+        
+    def normalize_key(self, name: str) -> str: return name.lower().replace(" ", "_").replace("-", "_")
 
-    def lookup_constant(self, constant_name: str) -> Optional[Dict[str, Any]]:
-        normalized = constant_name.lower().replace(" ", "_").replace("-", "_")
+    def lookup_constant(self, const_name: str) -> Optional[Dict[str, Any]]:
+        normalized = self.normalize_key(const_name)
         if normalized in self.constants:
             return {
                 "status": "success",
-                "constant": self.constants[normalized],
-                "name": constant_name
+                "constant": normalized,
+                "data": self.constants[normalized],
+                "search_term": const_name
             }
-        matches = []
-        for key, value in self.constants.items():
-            if normalized in key or key in normalized:
-                matches.append({"name": key, "constant": value})
-    
-        if matches:
+        possible_matches = difflib.get_close_matches(normalized, \
+            self.constants.keys(), n = 3, cutoff = 0.6)
+        if possible_matches:
+            suggestions = {match: self.constants[match]['description'] \
+                for match in possible_matches}
             return {
-                "status": "success",
-                "matches": matches,
-                "search_term": constant_name
+                "status": "info",
+                "message": f"Constant '{const_name}' not found. Did you mean one of: {', '.join(possible_matches)}?",
+                "suggestions": suggestions,
+                "search_term": const_name
             }
-    
         return {
             "status": "error",
-            "error": f"No constant found for '{constant_name}'",
+            "error": f"No constant found for '{const_name}'",
             "available": list(self.constants.keys())
         }
 
     def lookup_formula(self, formula_name: str):
-        normalized = formula_name.lower().replace(" ", "_")
+        normalized = self.normalize_key(formula_name)
         if normalized in self.formulas:
             return {
                 "status": "success",
                 "formula": self.formulas[normalized],
-                "name": formula_name
-            }
-    
-        matches = []
-        for key, value in self.formulas.items():
-            if normalized in key or key in normalized:
-                matches.append({"name": key, "formula": value})
-    
-        if matches:
-            return {
-                "status": "success",
-                "matches": matches,
                 "search_term": formula_name
             }
-    
+        possible_matches = difflib.get_close_matches(normalized, \
+            self.formulas.keys(), n = 3, cutoff = 0.6)
+        if possible_matches:
+            return {
+                "status": "success",
+                "message": f"Formula '{formula_name}' not found. Did you mean one of: {', '.join(possible_matches)}?",
+                "suggestions": {match: self.formulas[match] for match in possible_matches},
+                "search_term": formula_name
+            }
         return {
             "status": "error",
             "error": f"No formula found for '{formula_name}'",
@@ -118,5 +119,4 @@ class UniversalConstantsTool:
         }
 
     def list_constants(self) -> List[str]: return list(self.constants.keys())
-
     def list_formulas(self) -> List[str]: return list(self.formulas.keys())
