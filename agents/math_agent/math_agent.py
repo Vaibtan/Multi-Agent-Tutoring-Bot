@@ -4,6 +4,8 @@ from google.adk.agents import LlmAgent
 from google.adk.tools import FunctionTool
 
 from tools.calculator import CalculatorTool
+from tools.history import (add_context, get_context, get_progress,
+                           update_progress)
 
 calculator = CalculatorTool()
 
@@ -30,5 +32,8 @@ math_agent = LlmAgent(
     -   Offer to help with related topics or provide further examples.
 
     """,
-    tools = [FunctionTool(calculate_expression)]
+    tools = [
+        FunctionTool(calculate_expression), FunctionTool(add_context), \
+            FunctionTool(get_context), FunctionTool(update_progress), FunctionTool(get_progress)
+    ]
 )

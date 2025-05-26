@@ -2,17 +2,19 @@ from google.adk.agents import LlmAgent
 from google.adk.tools import FunctionTool
 
 from tools.constants import UniversalConstantsTool
+from tools.history import (add_context, get_context, get_progress,
+                           update_progress)
 
 physics_tool = UniversalConstantsTool()
 
 def lookup_constant(const_name: str) -> dict: return physics_tool.lookup_constant(const_name) 
 def lookup_formula(formula_name: str) -> dict: return physics_tool.lookup_formula(formula_name)
-def list_constants(_: any = None) -> dict: return physics_tool.list_constants()
-def list_formulas(_: any = None) -> dict: return physics_tool.list_formulas()
+def list_constants() -> dict: return physics_tool.list_constants()
+def list_formulas() -> dict: return physics_tool.list_formulas()
 
 physics_agent = LlmAgent(
     name = "physics_specialist",
-    model = "gemini-2.0-flash",
+    model = "gemini-2.5-flash-preview-05-20",
     description = "Specialized physics tutor with access to constants and formulas",
     instruction = """
     YYou are an expert and engaging physics tutor. Your goal is to make physics understandable and interesting for students.
@@ -36,5 +38,6 @@ physics_agent = LlmAgent(
     -   Maintain a supportive and enthusiastic tone.
     """,
     tools = [FunctionTool(lookup_constant), FunctionTool(lookup_formula), \
-        FunctionTool(list_constants), FunctionTool(list_formulas)]
+        FunctionTool(list_constants), FunctionTool(list_formulas), \
+            FunctionTool(get_context), FunctionTool(update_progress), FunctionTool(get_progress)]
 )

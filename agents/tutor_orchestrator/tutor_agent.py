@@ -8,6 +8,9 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.tools import FunctionTool
 from google.genai import types
 
+from tools.history import (add_context, get_context, get_progress,
+                           update_progress)
+
 QUERY_CLASSIFICATION_INSTRUCTION: str = """
 You are an expert query classifier. Your task is to analyze a student's query and determine its primary subject category.
 The possible categories are: 'math', 'physics', or 'general'.
@@ -29,7 +32,7 @@ Response: physics
 """
 
 classifier_agent = LlmAgent(name = "internal_query_classifier", \
-    model = "gemini-1.5-flash-latest", instruction = QUERY_CLASSIFICATION_INSTRUCTION, tools = [])
+    model = "gemini-2.5-flash-latest", instruction = QUERY_CLASSIFICATION_INSTRUCTION, tools = [])
 classifier_session_service = InMemorySessionService()
 classifier_runner = Runner(agent = classifier_agent, \
     session_service = classifier_session_service, app_name = "Multi-Agent Tutoring Bot")
@@ -54,8 +57,8 @@ async def run_classification_agent(query: str, user_id: str = "classifier_user")
         return "general"
     return classified_subject
 
-def classify_student_query(query: str) -> dict:
-    try: subject = asyncio.run(run_classification_agent(query))
+async def classify_student_query(query: str) -> dict:
+    try: subject = await run_classification_agent(query)
     except RuntimeError as e:
         print(f"Error running classification agent asynchronously: {e}. Falling back to keyword classification.")
         if any(kw in query.lower() for kw in ['math', 'solve', 'equation', 'calculate']): subject = "math"
@@ -89,5 +92,9 @@ tutor_orchestrator = LlmAgent(
     Example for physics: "Let's see what our Physics expert says. Classification: physics"
     Example for general: "Handling this general query: That's an interesting question! Here's some advice..."
     """,
-    tools = [FunctionTool(classify_student_query), FunctionTool(tutoring_guidance)],
+    tools = [
+        FunctionTool(classify_student_query), FunctionTool(tutoring_guidance), \
+            FunctionTool(add_context), FunctionTool(get_context), \
+                FunctionTool(update_progress), FunctionTool(get_progress)
+    ]
 )
