@@ -10,12 +10,12 @@
 * **Multi-Agent Architecture**: A central Tutor Orchestrator agent delegates tasks to specialized Math and Physics agents.
 * **Intelligent Query Classification**: Automatically determines the subject of a student's query (Math, Physics, or General).
 * **Specialized Agents**:
-  * **Math Agent**: Solves mathematical problems, explains concepts, and uses a built-in calculator tool.
-  * **Physics Agent**: Explains physics concepts, looks up physical constants and formulas using dedicated tools.
+    * **Math Agent**: Solves mathematical problems, explains concepts, and uses a built-in calculator tool.
+    * **Physics Agent**: Explains physics concepts, looks up physical constants and formulas using dedicated tools.
 * **Tool Usage**: Agents utilize tools to perform specific tasks:
-  * Calculator for mathematical computations.
-  * Lookup for physical constants and formulas.
-  * Conversation history and learning progress tracking.
+    * Calculator for mathematical computations.
+    * Lookup for physical constants and formulas.
+    * Conversation history and learning progress tracking.
 * **Conversation History & Context Management**: Agents remember previous interactions within a session to provide context-aware and personalized responses.
 * **Learning Progress Tracking**: The system can track a student's understanding level of different concepts.
 * **Web Interface**: A user-friendly chat interface built with FastAPI and basic HTML/CSS/JavaScript.
@@ -28,33 +28,31 @@ This AI Tutor is built on a multi-agent system design, inspired by Google's Agen
 ```mermaid
 graph LR
     UserInterface["🌐 Web Interface (FastAPI + HTML/JS)"] -->|User Query| APIServer[" FastAPI App (app.py)"];
-    APIServer -->|Process Query| MATS["MultiAgentTutoringSystem (main.py)"];
+    APIServer -->|Process Query| OrchestrationEntryPoint["MultiAgentTutoringSystem (main.py)"];
 
-    subgraph MATS [Multi-Agent Tutoring System Orchestration]
-        TutorOrchestratorAgent["👤 Tutor Orchestrator Agent"]
-        MathSpecialistAgent["✖️ Math Specialist Agent"]
-        PhysicsSpecialistAgent["🔬 Physics Specialist Agent"]
-        
-        MATS -->|Initial Query| TutorOrchestratorAgent;
+    subgraph MATS_Subgraph [Multi-Agent Tutoring System Orchestration]
+        direction LR
+        OrchestrationEntryPoint -->|Initial Query| TutorOrchestratorAgent["👤 Tutor Orchestrator Agent"];
         TutorOrchestratorAgent -- uses --> ClassifierTool["classify_student_query (Tool)"];
         ClassifierTool -- runs --> InternalClassifierAgent["🤖 Internal Query Classifier Agent (LLM)"];
         
-        TutorOrchestratorAgent -- uses --> ConversationHistoryTools["📚 Conversation History Tools"];
+        TutorOrchestratorAgent -- uses --> ConversationHistoryToolsGroup["📚 Conversation History Tools"];
         
-        MATS -- If Math Query --> MathSpecialistAgent;
-        MATS -- If Physics Query --> PhysicsSpecialistAgent;
-        MATS -- If General Query --> TutorOrchestratorAgent;
+        OrchestrationEntryPoint -- If Math Query --> MathSpecialistAgent["✖️ Math Specialist Agent"];
+        OrchestrationEntryPoint -- If Physics Query --> PhysicsSpecialistAgent["🔬 Physics Specialist Agent"];
+        OrchestrationEntryPoint -- If General Query --> TutorOrchestratorAgent;
 
-        MathSpecialistAgent -- uses --> Calculator["🧮 Calculator Tool"];
-        MathSpecialistAgent -- uses --> ConversationHistoryTools;
-        PhysicsSpecialistAgent -- uses --> ConstantsFormulas["🔍 Constants & Formulas Tool"];
-        PhysicsSpecialistAgent -- uses --> ConversationHistoryTools;
+        MathSpecialistAgent -- uses --> CalculatorToolInstance["🧮 Calculator Tool"];
+        MathSpecialistAgent -- uses --> ConversationHistoryToolsGroup;
+        PhysicsSpecialistAgent -- uses --> ConstantsFormulasToolInstance["🔍 Constants & Formulas Tool"];
+        PhysicsSpecialistAgent -- uses --> ConversationHistoryToolsGroup;
     end
 
-    subgraph Tools
-        Calculator
-        ConstantsFormulas
-        ConversationHistoryTools
+    subgraph AllTools [Tools]
+        direction TB
+        CalculatorToolInstance
+        ConstantsFormulasToolInstance
+        ConversationHistoryToolsGroup
         ClassifierTool
     end
     
@@ -65,6 +63,7 @@ graph LR
 
     style UserInterface fill:#D6EAF8,stroke:#333,stroke-width:2px
     style APIServer fill:#D1F2EB,stroke:#333,stroke-width:2px
-    style MATS fill:#FCF3CF,stroke:#333,stroke-width:2px
-    style Tools fill:#FDEDEC,stroke:#333,stroke-width:2px
+    style OrchestrationEntryPoint fill:#FCF3CF,stroke:#333,stroke-width:2px
+    style MATS_Subgraph fill:#FEF9E7,stroke:#CCC,stroke-width:1px,color:#333
+    style AllTools fill:#FDEDEC,stroke:#CCC,stroke-width:1px,color:#333
     style GeminiAPI fill:#E8DAEF,stroke:#333,stroke-width:2px
