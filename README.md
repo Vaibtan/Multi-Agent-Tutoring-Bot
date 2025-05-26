@@ -120,3 +120,40 @@ Once the setup is complete, run the FastAPI application using Uvicorn:
 
 ```bash
 uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+## 💬 Usage
+
+* **Web Interface**: Open `http://localhost:8000` in your web browser to interact with the AI Tutor via a chat interface.
+* **API Endpoint**: The chat functionality is also available at the `POST /api/chat` endpoint. You can use tools like `curl` or Postman to interact with it.
+    * **Request Body**:
+        ```json
+        {
+            "message": "Your question here",
+            "student_id": "optional_student_identifier"
+        }
+        ```
+    * **Health Check**: `GET /api/health`
+    * **Agent Status**: `GET /api/agents/status` (Note: This endpoint may need to be updated to reflect actual agent health if it's just showing the tutor port currently).
+
+## ☁️ Deployment
+
+This application is built with FastAPI and is suitable for deployment on various platforms that support Python ASGI applications, such as:
+
+* Vercel
+* Railway
+* Google Cloud Run
+* AWS Elastic Beanstalk
+* Heroku
+
+Ensure your `GEMINI_API_KEY` and other necessary environment variables are configured on the deployment platform.
+
+## 💡 Future Enhancements
+
+* Persistent storage for conversation history and learning progress (e.g., using a database like SQLite, PostgreSQL, or a NoSQL option).
+* More sophisticated context retrieval mechanisms (e.g., vector embeddings for semantic search of conversation history).
+* Support for more subjects and more advanced tools.
+* User authentication and distinct profiles for personalized long-term learning.
+* Streaming responses for a more interactive and real-time chat experience.
+* Enhanced error handling and logging for production readiness.
+* UI/UX improvements based on user feedback.
