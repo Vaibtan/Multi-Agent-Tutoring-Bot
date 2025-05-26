@@ -67,3 +67,56 @@ graph LR
     style MATS_Subgraph fill:#FEF9E7,stroke:#CCC,stroke-width:1px,color:#333
     style AllTools fill:#FDEDEC,stroke:#CCC,stroke-width:1px,color:#333
     style GeminiAPI fill:#E8DAEF,stroke:#333,stroke-width:2px
+```
+## 🛠️ Technology Stack
+
+* **Backend**: Python, FastAPI
+* **AI/LLM**: Google Gemini API
+* **Agent Framework**: Principles and components inspired by Google Agent Development Kit (ADK)
+* **Frontend**: HTML, CSS, JavaScript (via FastAPI templating)
+* **Core Libraries**: `pydantic` (for settings), `python-dotenv`
+
+## 🚀 Setup and Installation
+
+### Prerequisites
+
+* Python 3.9+
+* Access to Google Gemini API and a valid API Key.
+
+### Steps
+
+1.  **Clone the repository**:
+    ```bash
+    git clone <your-repository-url>
+    cd <repository-name>
+    ```
+
+2.  **Create and activate a virtual environment**:
+    ```bash
+    python -m venv venv
+    # Windows
+    # .\venv\Scripts\activate
+    # macOS/Linux
+    source venv/bin/activate
+    ```
+
+3.  **Install dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Set up environment variables**:
+    Create a `.env` file in the project root by copying `.env.example` (if provided) or creating it manually. Add your Gemini API key:
+    ```env
+    GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
+    HOST="0.0.0.0"
+    TUTOR_PORT=8000
+    # Other config variables from config.py can also be set here
+    ```
+
+## ▶️ Running the Application
+
+Once the setup is complete, run the FastAPI application using Uvicorn:
+
+```bash
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
