@@ -150,8 +150,8 @@ Ensure your `GEMINI_API_KEY` and other necessary environment variables are confi
 
 ## 💡 Future Enhancements
 
-* Persistent storage for conversation history and learning progress (e.g., using a database like SQLite, PostgreSQL, or a NoSQL option).
-* More sophisticated context retrieval mechanisms (e.g., vector embeddings for semantic search of conversation history).
+* Persistent storage for conversation history and learning progress (SQLite, PostgreSQL, or a NoSQL option).
+* More sophisticated context retrieval mechanisms (vector embeddings for semantic search of conversation history, Reinforcement Learning guided Multi Agent RAG Pipeline (inspired by this paper (https://arxiv.org/abs/2501.15228)), Chain of Thought with Validation Loops).
 * Support for more subjects and more advanced tools.
 * User authentication and distinct profiles for personalized long-term learning.
 * Streaming responses for a more interactive and real-time chat experience.
