@@ -48,8 +48,8 @@ async def run_classification_agent(query: str, user_id: str = "classifier_user")
     async for event in classifier_runner.run_async(user_id = user_id, \
         session_id = session_id, new_message = types.Content(
                 role = 'user', parts = [types.Part.from_text(text = query)])):
-        if getattr(event, "content", None) and event.content.parts:
-            for part in event.content.parts:
+        if getattr(event, "content", None) and event.content.parts: # type: ignore
+            for part in event.content.parts: # type: ignore
                 if hasattr(part, 'text') and part.text: response += part.text
     classified_subject = response.strip().lower()
     if classified_subject not in ["math", "physics", "general"]:
@@ -83,14 +83,14 @@ tutor_orchestrator = LlmAgent(
     3.  State Classification and Intent:
         * If 'math': Respond with a message like "Okay, I'll connect you with our Math specialist. Classification: math".
         * If 'physics': Respond with a message like "Let me get our Physics expert for this. Classification: physics".
-        * If 'general', or if the query is very clearly about study habits, motivation, how to learn, or how to use the tutoring system: You handle it directly. Provide helpful advice. Start your response with something like "Handling this general query:".
+        * If 'general', or if the query is very clearly about study habits, motivation, how to learn, or how to use the tutoring system: You handle it directly. Provide helpful advice".
     4.  Synthesize and Present (for specialist responses later): When a specialist agent provides a response, present it clearly to the student. (This part of the instruction is more for a multi-turn scenario if you build that out).
 
     Your FIRST response to the user's query should be based on the classification.
     For 'math' or 'physics', your response should clearly indicate the subject so the system can route the original query.
     Example for math: "Okay, I'll ask our Math specialist to help with that. Classification: math"
     Example for physics: "Let's see what our Physics expert says. Classification: physics"
-    Example for general: "Handling this general query: That's an interesting question! Here's some advice..."
+    Example for general: "That's an interesting question! Here's some advice..."
     """,
     tools = [
         FunctionTool(classify_student_query), FunctionTool(tutoring_guidance), \

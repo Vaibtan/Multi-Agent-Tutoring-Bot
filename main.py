@@ -3,9 +3,9 @@ import random
 import re
 import string
 import time
-from typing import Any, Dict, Optional
+from typing import Any, AsyncGenerator, Dict, List
 
-from google.adk.runners import InMemoryRunner, Runner
+from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
@@ -16,13 +16,13 @@ from common.config import settings
 from common.utils import extract_response_and_tools
 
 
-class MultiAgentTutoringSystem:
+class MultiAgentTutor:
     def __init__(self):
         self.settings = settings
         self.tutor = tutor_orchestrator
         self.math  = math_agent
         self.phys  = physics_agent
-        self.session_service = InMemorySessionService()
+        self.session_service = InMemorySessionService() 
         self.runners = {
             self.tutor.name: Runner(agent = self.tutor, \
                 session_service = self.session_service, app_name = "Multi-Agent Tutoring Bot"),
@@ -91,11 +91,56 @@ class MultiAgentTutoringSystem:
         return {"response": final_response, "agent": final_agent, \
             "subject": subject, "tools_used": final_tools, "student_id": student_id}
 
+class StreamingMultiAgentTutor(MultiAgentTutor):
+    async def stream_student_query(self, *, query: str, \
+        student_id: str = "student") -> AsyncGenerator[str, None]:
+        tutor_session = await self.get_session_id(student_id, self.tutor.name)
+        tutor_events = self.runners[self.tutor.name].run_async(
+            user_id=student_id,
+            session_id=tutor_session,
+            new_message=types.Content(
+                role="user", parts=[types.Part.from_text(text=query)]
+            ),
+        )
+        tutor_response, tutor_tools = await extract_response_and_tools(tutor_events)
+        subject = "general"
+        if "classification:" in tutor_response.lower():
+            import re
+            m = re.search(r"classification:\s*(math|physics|general)", tutor_response, re.I)
+            if m: subject = m.group(1).lower()
+        elif "handling this general query" in tutor_response.lower(): subject = "general"
+
+        async def yield_runner_chunks(runner_key: str):
+            events = self.runners[runner_key].run_async(
+                user_id = student_id,
+                session_id = await self.get_session_id(student_id, runner_key),
+                new_message = types.Content(role="user", parts = [types.Part.from_text(text = query)]),
+            )
+            async for ev in events:
+                if getattr(ev, "content", None) and ev.content.parts: # type: ignore
+                    for part in ev.content.parts: # type: ignore
+                        if hasattr(part, "text") and part.text: yield part.text
+        tools: List[str]
+        if subject == "math":
+            chunk_gen = yield_runner_chunks(self.math.name); tools = tutor_tools  
+        elif subject == "physics":
+            chunk_gen = yield_runner_chunks(self.phys.name); tools = tutor_tools
+        else: 
+            async def tutor_only(): yield tutor_response
+            chunk_gen = tutor_only()
+            tools = tutor_tools
+        async for chunk in chunk_gen: yield chunk
+        # After streaming language chunks, attach tools used (JSON list) so the
+        # client can still surface them.  This matches common SSE patterns where
+        # `event:` sets a custom event type that browsers can differentiate.
+        yield "\n"
+        if tools: import json; yield f"event: tools\ndata: {json.dumps(tools)}\n\n"
+
 async def cli_main():
     if not settings.GEMINI_API_KEY:
         print("Error: GEMINI_API_KEY not found. Please set it in your .env file.")
         return     
-    system = MultiAgentTutoringSystem()
+    system = StreamingMultiAgentTutor()
     print("🎓 AI Tutor (Multi-Agent System with ADK) is ready. Type 'exit' or 'quit' to end.") 
     timestamp = int(time.time() * 1000)
     suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k = 6))
