@@ -56,7 +56,7 @@ joblib==1.5.1
 jsonpatch==1.33
 jsonpointer==3.0.0
 langchain==0.3.26
-langchain-community==0.3.26
+langchain-community==0.3.27
 langchain-core==0.3.66
 langchain-google-genai==2.1.5
 langchain-milvus==0.2.0
