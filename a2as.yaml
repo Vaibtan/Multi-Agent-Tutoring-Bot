@@ -1,0 +1,380 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: vaibtan/multi-agent-tutoring-bot
+    source: https://github.com/vaibtan/multi-agent-tutoring-bot
+    branch: main
+    commit: "be76e276"
+    scope: [agents/tutor_orchestrator/tutor_agent.py, agents/math_agent/math_agent.py, tools/history.py, tools/constants.py,
+      app.py, main.py, agents/physics_agent/physics_agent.py, tools/calculator.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:58:16Z'
+    url: https://a2as.org/certified/agents/vaibtan/multi-agent-tutoring-bot
+  signatures:
+    digest: sha256:7JTaBtCwuwuFVZc_Mg3nnfQsTrzrDlYiYxYhIvCGKKk
+    key: ed25519:keiNQ-HIo1oPyT5ROtOZ5aFMTYGOA0TUbgEv8y9tKE0
+    sig: ed25519:HzDNUxA1oXS7PpHHVbfMlzi1wJYVZeGN_MjQAEsWA9OmpQWXKBZdxwWtqOL086pnMk-Qbj1UbGJCmC9JZOu-Cw
+
+agents:
+  classifier_agent:
+    type: instance
+    models: [gemini-2.5-flash-latest]
+    params:
+      name: internal_query_classifier
+      instruction: [You are an expert query classifier. Your task is to analyze a student's query and determine its primary
+          subject category., 'The possible categories are: ''math'', ''physics'', or ''general''.', 'Respond with ONLY the
+          category name in lowercase (e.g., "math", "physics", "general").', 'Do not add any other text, explanation, or punctuation.
+          Just the single word.', 'Example:', 'Query: "Help me solve 2x + 5 = 10"', 'Response: math', 'Query: "What is Newton''s
+          second law?"', 'Response: physics', 'Query: "Any tips for studying?"', 'Response: general', 'Query: "Tell me about
+          black holes and also calculate 5*5"', 'Response: physics']
+  math_agent:
+    type: instance
+    models: [gemini-2.0-flash]
+    tools: [calculate_expression, add_context, get_context, update_progress, get_progress]
+    params:
+      name: math_specialist
+      description: Specialized mathematics tutor capable of solving problems and explaining concepts
+      instruction: ['Your capabilities:', '1.  Solve Mathematical Problems: Break down problems step-by-step, showing your
+          reasoning clearly.', '2.  Explain Mathematical Concepts: When asked about a concept (e.g., "What is algebra?", "Explain
+          derivatives"), provide clear, concise, and accurate explanations. Use examples to illustrate complex ideas. You
+          do NOT have a specific tool for this; use your own knowledge.', '4.  Guidance and Encouragement: Provide educational
+          guidance and maintain a positive, encouraging tone.', '5.  Clarity: Ensure your explanations and solutions are easy
+          to understand for students at various levels.', 'Interaction Flow:', '-   When a student asks a question, first
+          understand if it''s a problem to solve, a concept to explain, or requires a calculation.', '-   If it''s a conceptual
+          question (e.g., "help me understand calculus", "what are polynomials?"), explain it directly using your knowledge.
+          Do NOT look for a tool for this.', '-   If it requires calculation, state the calculation and use the `calculate_expression`
+          tool.', '-   Always show your work and reasoning.', '-   If a calculation tool returns an error, explain the error
+          to the student and ask for clarification if needed (e.g., "The calculator tool reported an error: [error message].
+          Could you please check the expression?").', '-   Offer to help with related topics or provide further examples.']
+  physics_agent:
+    type: instance
+    models: [gemini-2.5-flash-preview-05-20]
+    tools: [lookup_constant, lookup_formula, list_constants, list_formulas, get_context, update_progress, get_progress]
+    params:
+      name: physics_specialist
+      description: Specialized physics tutor with access to constants and formulas
+      instruction: [YYou are an expert and engaging physics tutor. Your goal is to make physics understandable and interesting
+          for students., 'Your capabilities:', '1.  Explain Physics Concepts and Laws: When a student asks for an explanation
+          of a physics concept, law, or theory (e.g., "What is Newton''s second law?", "Explain quantum entanglement", "Tell
+          me about thermodynamics"), provide clear, accurate, and comprehensive explanations. Use analogies and real-world
+          examples where helpful. You do NOT have a specific tool for this; use your own knowledge.', '2.  Solve Physics Problems:
+          Guide students step-by-step through solving physics problems. Clearly outline the principles, equations, and steps
+          involved.', '3.  Use Lookup Tools:', '* If you need the value of a specific physical constant for an explanation
+          or calculation (e.g., "speed of light", "gravitational constant"), use the `lookup_physics_constant` tool.', '*
+          If a student asks for a specific formula or you need it for a problem (e.g., "What''s the formula for kinetic energy?",
+          "Ohm''s law"), use the `lookup_physics_formula` tool.', '* If a student asks to "list constants" or "list formulas",
+          use the `list_physics_constants` or `list_physics_formulas` tools respectively.', '4.  Connect Theory to Applications:
+          Relate physics principles to practical, real-world applications to enhance understanding and interest.', '5.  Encourage
+          Scientific Thinking: Foster curiosity and critical thinking.', 'Interaction Flow:', '-   When a student asks a question,
+          determine if it''s conceptual, problem-solving, or requires specific data.', '-   For conceptual questions (e.g.,
+          "explain black holes"), provide explanations directly from your knowledge base. Do NOT look for a tool for this.',
+        '-   If a constant or formula is explicitly requested or needed, use the appropriate lookup tool.', '-   If a tool
+          returns an error or ''info'' with suggestions, relay that information clearly to the student (e.g., "The tool couldn''t
+          find ''gravity constant''. Did you mean ''gravitational_constant''?").', '-   Show all steps in problem-solving.',
+        '-   Maintain a supportive and enthusiastic tone.']
+  tutor_orchestrator:
+    type: instance
+    models: [gemini-1.5-flash-latest]
+    tools: [classify_student_query, tutoring_guidance, add_context, get_context, update_progress, get_progress]
+    params:
+      name: tutor_orchestrator
+      description: Main AI tutoring coordinator. Classifies student queries and routes them to math or physics specialist
+        agents, or handles general study advice directly.
+      instruction: ['You are the main AI Tutor Orchestrator. Your primary responsibilities are:', '1.  Welcome and Understand:
+          Warmly greet the student.', '2.  Classify Query: You MUST use the `classify_student_query` tool to determine if
+          the student''s question pertains to ''math'', ''physics'', or is ''general''.', '3.  State Classification and Intent:',
+        '* If ''math'': Respond with a message like "Okay, I''ll connect you with our Math specialist. Classification: math".',
+        '* If ''physics'': Respond with a message like "Let me get our Physics expert for this. Classification: physics".',
+        '* If ''general'', or if the query is very clearly about study habits, motivation, how to learn, or how to use the
+          tutoring system: You handle it directly. Provide helpful advice".', '4.  Synthesize and Present (for specialist
+          responses later): When a specialist agent provides a response, present it clearly to the student. (This part of
+          the instruction is more for a multi-turn scenario if you build that out).', Your FIRST response to the user's query
+          should be based on the classification., 'For ''math'' or ''physics'', your response should clearly indicate the
+          subject so the system can route the original query.', 'Example for math: "Okay, I''ll ask our Math specialist to
+          help with that. Classification: math"', 'Example for physics: "Let''s see what our Physics expert says. Classification:
+          physics"', 'Example for general: "That''s an interesting question! Here''s some advice..."']
+
+models:
+  gemini-1.5-flash-latest:
+    type: literal
+    agents: [tutor_orchestrator]
+  gemini-2.0-flash:
+    type: literal
+    agents: [math_agent]
+  gemini-2.5-flash-latest:
+    type: literal
+    agents: [classifier_agent]
+  gemini-2.5-flash-preview-05-20:
+    type: literal
+    agents: [physics_agent]
+
+tools:
+  add_context:
+    type: wrapper
+    agents: [tutor_orchestrator, math_agent]
+    params:
+      wrapper: FunctionTool
+      wraps: add_context
+  calculate_expression:
+    type: wrapper
+    agents: [math_agent]
+    params:
+      wrapper: FunctionTool
+      wraps: calculate_expression
+  classify_student_query:
+    type: wrapper
+    agents: [tutor_orchestrator]
+    params:
+      wrapper: FunctionTool
+      wraps: classify_student_query
+  get_context:
+    type: wrapper
+    agents: [tutor_orchestrator, math_agent, physics_agent]
+    params:
+      wrapper: FunctionTool
+      wraps: get_context
+  get_progress:
+    type: wrapper
+    agents: [tutor_orchestrator, math_agent, physics_agent]
+    params:
+      wrapper: FunctionTool
+      wraps: get_progress
+  list_constants:
+    type: wrapper
+    agents: [physics_agent]
+    params:
+      wrapper: FunctionTool
+      wraps: list_constants
+  list_formulas:
+    type: wrapper
+    agents: [physics_agent]
+    params:
+      wrapper: FunctionTool
+      wraps: list_formulas
+  lookup_constant:
+    type: wrapper
+    agents: [physics_agent]
+    params:
+      wrapper: FunctionTool
+      wraps: lookup_constant
+  lookup_formula:
+    type: wrapper
+    agents: [physics_agent]
+    params:
+      wrapper: FunctionTool
+      wraps: lookup_formula
+  tutoring_guidance:
+    type: wrapper
+    agents: [tutor_orchestrator]
+    params:
+      wrapper: FunctionTool
+      wraps: tutoring_guidance
+  update_progress:
+    type: wrapper
+    agents: [tutor_orchestrator, math_agent, physics_agent]
+    params:
+      wrapper: FunctionTool
+      wraps: update_progress
+
+imports:
+  add_context: tools.history.add_context
+  Any: typing.Any
+  APIRouter: fastapi.APIRouter
+  ast: ast
+  AsyncGenerator: typing.AsyncGenerator
+  asyncio: asyncio
+  BaseModel: pydantic.BaseModel
+  CalculatorTool: tools.calculator.CalculatorTool
+  CORSMiddleware: fastapi.middleware.cors.CORSMiddleware
+  datetime: datetime.datetime
+  Dict: typing.Dict
+  difflib: difflib
+  EventSourceResponse: sse_starlette.sse.EventSourceResponse
+  extract_response_and_tools: common.utils.extract_response_and_tools
+  FastAPI: fastapi.FastAPI
+  FunctionTool: google.adk.tools.FunctionTool
+  get_context: tools.history.get_context
+  get_progress: tools.history.get_progress
+  HTMLResponse: fastapi.responses.HTMLResponse
+  HTTPException: fastapi.HTTPException
+  InMemoryRunner: google.adk.runners.InMemoryRunner
+  InMemorySessionService: google.adk.sessions.InMemorySessionService
+  Jinja2Templates: fastapi.templating.Jinja2Templates
+  json: json
+  List: typing.List
+  LlmAgent: google.adk.agents.LlmAgent
+  math: math
+  math_agent: agents.math_agent.math_agent.math_agent
+  operator: operator
+  Optional: typing.Optional
+  physics_agent: agents.physics_agent.physics_agent.physics_agent
+  random: random
+  re: re
+  Request: fastapi.Request
+  Runner: google.adk.runners.Runner
+  settings: common.config.settings
+  StaticFiles: fastapi.staticfiles.StaticFiles
+  StreamingMultiAgentTutor: main.StreamingMultiAgentTutor
+  string: string
+  time: time
+  ToolContext: google.adk.tools.ToolContext
+  traceback: traceback
+  tutor_orchestrator: agents.tutor_orchestrator.tutor_agent.tutor_orchestrator
+  types: google.genai.types
+  Union: typing.Union
+  UniversalConstantsTool: tools.constants.UniversalConstantsTool
+  update_progress: tools.history.update_progress
+  uvicorn: uvicorn
+
+functions:
+  __init__:
+    type: sync
+    module: main
+    args: [self]
+  add_context:
+    type: sync
+    module: tools.history
+    args: [topic, key_points, tool_context]
+    params:
+      returns: dict
+  agents_status:
+    type: async
+    module: app
+  calculate:
+    type: sync
+    module: tools.calculator
+    args: [cls, expr]
+    params:
+      returns: Dict
+  calculate_expression:
+    type: sync
+    module: agents.math_agent.math_agent
+    args: [expression]
+    params:
+      returns: dict
+  chat_endpoint:
+    type: async
+    module: app
+    args: [chat_message]
+  chat_stream:
+    type: async
+    module: app
+    args: [message, student_id]
+    params:
+      returns: EventSourceResponse
+  classify_student_query:
+    type: async
+    module: agents.tutor_orchestrator.tutor_agent
+    args: [query]
+    params:
+      returns: dict
+  cli_main:
+    type: async
+    module: main
+  evaluate_node:
+    type: sync
+    module: tools.calculator
+    args: [cls, node]
+    params:
+      returns: Union
+  event_publisher:
+    type: async
+    module: app
+  get_context:
+    type: sync
+    module: tools.history
+    args: [topic, tool_context]
+    params:
+      returns: dict
+  get_progress:
+    type: sync
+    module: tools.history
+    args: [subject, tool_context]
+    params:
+      returns: dict
+  get_session_id:
+    type: async
+    module: main
+    args: [self, student_id, agent_for_session]
+    params:
+      returns: str
+  get_supported_functions:
+    type: sync
+    module: tools.calculator
+    args: [cls]
+    params:
+      returns: List[str]
+  health_check:
+    type: async
+    module: app
+  home:
+    type: async
+    module: app
+    args: [request]
+  list_constants:
+    type: sync
+    module: agents.physics_agent.physics_agent
+    params:
+      returns: dict
+  list_formulas:
+    type: sync
+    module: agents.physics_agent.physics_agent
+    params:
+      returns: dict
+  lookup_constant:
+    type: sync
+    module: agents.physics_agent.physics_agent
+    args: [const_name]
+    params:
+      returns: dict
+  lookup_formula:
+    type: sync
+    module: agents.physics_agent.physics_agent
+    args: [formula_name]
+    params:
+      returns: dict
+  normalize_key:
+    type: sync
+    module: tools.constants
+    args: [self, name]
+    params:
+      returns: str
+  process_student_query:
+    type: async
+    module: main
+    args: [self, query, student_id]
+    params:
+      returns: Dict
+  run_classification_agent:
+    type: async
+    module: agents.tutor_orchestrator.tutor_agent
+    args: [query, user_id]
+    params:
+      returns: str
+  stream_student_query:
+    type: async
+    module: main
+    args: [self]
+    params:
+      returns: AsyncGenerator
+  tutor_only:
+    type: async
+    module: main
+  tutoring_guidance:
+    type: sync
+    module: agents.tutor_orchestrator.tutor_agent
+    args: [user_query_for_context]
+    params:
+      returns: dict
+  update_progress:
+    type: sync
+    module: tools.history
+    args: [subject, concept, understanding_level, tool_context]
+    params:
+      returns: dict
+  yield_runner_chunks:
+    type: async
+    module: main
+    args: [runner_key]
